@@ -20,7 +20,7 @@ crops <- list.files(path="./googleresults/TheTelegraph/crops", all.files=TRUE,
 livestock <- list.files(path="./googleresults/TheTelegraph/livestock", all.files=TRUE, 
                         full.names=TRUE) %>%
   .[endsWith(., '.html')]
-foodsystem <- list.files(path="./googleresults/TheGuardian/foodsystem", all.files=TRUE, 
+foodsystem <- list.files(path="./googleresults/TheTelegraph/foodsystem", all.files=TRUE, 
                          full.names=TRUE) %>%
   .[endsWith(., '.html')]
 source <- c(farming, agriculture, crops, livestock, foodsystem)
@@ -63,5 +63,9 @@ for (i in 1:length(source)){
 output <- output[order(output$page),]
 output$order <- seq(1:nrow(output))
 
-write.csv(output, 'TheTelegraph.csv', row.names = FALSE)
+#filter for unique results
+output <- output %>% 
+  distinct(urls, .keep_all = TRUE)
+
+write.csv(output, 'googleresults/TheTelegraph/TheTelegraph_googleresults.csv', row.names = FALSE)
 

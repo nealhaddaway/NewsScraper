@@ -8,7 +8,22 @@ library(svMisc)
 # Load in html files from local source
 dir <- list.files(path="./googleresults/FarmersWeekly", all.files=TRUE, 
                   full.names=TRUE)
-source <- dir[endsWith(dir, '.html')]
+farming <- list.files(path="./googleresults/FarmersWeekly/farming", all.files=TRUE, 
+                      full.names=TRUE) %>%
+  .[endsWith(., '.html')]
+agriculture <- list.files(path="./googleresults/FarmersWeekly/agriculture", all.files=TRUE, 
+                          full.names=TRUE) %>%
+  .[endsWith(., '.html')]
+crops <- list.files(path="./googleresults/FarmersWeekly/crops", all.files=TRUE, 
+                    full.names=TRUE) %>%
+  .[endsWith(., '.html')]
+livestock <- list.files(path="./googleresults/FarmersWeekly/livestock", all.files=TRUE, 
+                        full.names=TRUE) %>%
+  .[endsWith(., '.html')]
+foodsystem <- list.files(path="./googleresults/FarmersWeekly/foodsystem", all.files=TRUE, 
+                         full.names=TRUE) %>%
+  .[endsWith(., '.html')]
+source <- c(farming, agriculture, crops, livestock, foodsystem)
 
 output <- data.frame(source = NULL, page = NULL, urls = NULL, row = NULL)
 
@@ -48,5 +63,9 @@ for (i in 1:length(source)){
 output <- output[order(output$page),]
 output$order <- seq(1:nrow(output))
 
-write.csv(output, 'FarmersWeekly.csv', row.names = FALSE)
+#filter for unique results
+output <- output %>% 
+  distinct(urls, .keep_all = TRUE)
+
+write.csv(output, 'googleresults/FarmersWeekly/FarmersWeekly_googleresults.csv', row.names = FALSE)
 

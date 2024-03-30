@@ -68,5 +68,5 @@ output$order <- seq(1:nrow(output))
 output <- output %>% 
   distinct(urls, .keep_all = TRUE)
 
-write.csv(output, 'TheGuardian.csv', row.names = FALSE)
+write.csv(output, 'googleresults/TheGuardian/TheGuardian_googleresults.csv', row.names = FALSE)
 
