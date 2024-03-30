@@ -2,6 +2,7 @@
 library(RCurl)
 library(rvest)
 library(tidyverse)
+library(svMisc)
 
 input <- read.csv("googleresults/TheTelegraph/TheTelegraph_googleresults.csv")
 

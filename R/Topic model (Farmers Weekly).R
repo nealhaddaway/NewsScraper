@@ -2,13 +2,19 @@ library(tidyverse)
 library(tidytext)
 library(textmineR)
 
-# topic modelling for New Scientist data
+# topic modelling for Farmers Weekly data
+# load in data
+data <- read.csv('results/FarmersWeekly/FarmersWeeklyOutput_subject.csv')
 
 # preprocessing
-data <- data.frame(text = output$text, id = paste0('NewScientist_', output$page))
+data <- data.frame(text = data$text, id = paste0('FarmersWeekly_', data$page))
+data <- unique(data)
+
 # remove irrelevant text
 data$text <- data$text %>%
-  sub("..*", "", a)
+  sub("\n\nTransition Live\n\nMost recent\n\n.*", "", .) %>%
+  sub("\n\nRelated\n\nMost popular this week.*", "", .) 
+data <- unique(data)
 
 text_cleaning_tokens <- data %>% 
   tidytext::unnest_tokens(word, text)
@@ -33,6 +39,7 @@ dtm <- CreateDtm(tokens$text,
 tf <- TermDocFreq(dtm = dtm)
 original_tf <- tf %>% select(term, term_freq,doc_freq)
 rownames(original_tf) <- 1:nrow(original_tf)
+
 # Eliminate words appearing less than 2 times or in more than half of the
 # documents
 vocabulary <- tf$term[ tf$term_freq > 1 & tf$doc_freq < nrow(dtm) / 2 ]
@@ -56,6 +63,7 @@ model_list <- TmParallelApply(X = k_list, FUN = function(k){
   
   m
 }, export=c("dtm", "model_dir")) # export only needed for Windows machines
+
 #model tuning
 #choosing the best model
 coherence_mat <- data.frame(k = sapply(model_list, function(x) nrow(x$phi)), 

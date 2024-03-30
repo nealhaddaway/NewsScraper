@@ -2,8 +2,9 @@
 library(RCurl)
 library(rvest)
 library(tidyverse)
+library(svMisc)
 
-input <- read.csv("NewScientist.csv")
+input <- read.csv("googleresults/NewScientist/NewScientist_googleresults.csv")
 
 output <- data.frame(page=NULL, 
                      title=NULL, 
@@ -31,6 +32,7 @@ for(i in 1:length(input$urls)){
     gsub("â€", '"', .)
   text <- paste(text, collapse='\n\n')
   if(identical(text, character(0))){text<-'[No main text]'}
+  if(identical(text, "")){text<-'[No main text]'}
   
   # find title
   title <- html %>% 
@@ -51,14 +53,8 @@ for(i in 1:length(input$urls)){
     html_attr("src") %>%
     sub("width=120", "width=1000", .)
   lead_img <- lead_img[grepl('*.jpg|.png|.jpeg', lead_img)] #save only jpg or png files
-  #lead_img2 <- lead_img[!grepl('*badge.png', lead_img)] #remove Guardian badge
-  #lead_img2 <- lead_img[!grepl('*uploads*', lead_img)] #remove folders from uploads section (headshots)
-  captions <- html %>% 
-    #html_elements("figure") %>%
-    html_elements("figcaption") %>%
-    html_text2() %>%
-    unique()
-  n_photos <- length(captions)
+  n_photos <- length(lead_img)
+  lead_img <- lead_img[1]
   if(identical(lead_img, character(0))){lead_img<-'[No lead image]'} 
   
   # find lead image caption
@@ -83,19 +79,82 @@ for(i in 1:length(input$urls)){
   
   #progress bar
   progress(i, length(input$urls))
+  
+  # erase html
+  rm(html)
 }
 
+# deduplicate rows of df
 output <- unique(output)
 
+# filter text for search terms
+output$subject_check <- grepl('farm|agricultur|crop|livestock|food', output$text)
+output$research_check <- grepl('study|research|university|institute|studied|researchers', output$text)
+
+subject_output <- subset(output, subject_check==TRUE)
+research_output <- subset(subject_output, research_check==TRUE)
+
 # save output
-write.csv(output, 'NewScientistOutput.csv', row.names = FALSE)
+write.csv(output, 'results/NewScientist/NewScientistOutput.csv', row.names = FALSE)
+write.csv(subject_output, 'results/NewScientist/NewScientistOutput_subject.csv', row.names = FALSE)
+write.csv(research_output, 'results/NewScientist/NewScientistOutput_subject&research.csv', row.names = FALSE)
 
 # save images
+# save all images
 for (i in 1:length(output$lead_img)) {
-  if(output$lead_img[i]=='[No lead image]'){
+  if(output$lead_img[i]=='[No lead image]'|is.na(output$lead_img[i]==TRUE)){
     print(paste0('No image to download for record #', i))
   } else {
-    download.file(output$lead_img[i], destfile=paste0("lead_images/NewScientist/page_", i,".jpg"), quiet = TRUE)
-    print(paste0('Image #', i, ' downloaded successfully'))
+    tryCatch({
+      download.file(output$lead_img[i], 
+                    destfile=paste0("lead_images/NewScientist/output/NewScientist_page-", i,".jpg"), 
+                    quiet = TRUE)
+      print(paste0('Image #', i, ' downloaded successfully'))},
+      error = function(msg){
+        print(paste0('Cannot open URL ', i))
+      },
+      warning = function(msg){
+        print(paste0('Cannot open URL ', i))
+      })
+  }
+}
+
+# save research images
+for (i in 1:length(research_output$lead_img)) {
+  if(research_output$lead_img[i]=='[No lead image]'|is.na(research_output$lead_img[i]==TRUE)){
+    print(paste0('No image to download for record #', i))
+  } else {
+    tryCatch({
+      download.file(research_output$lead_img[i], 
+                    destfile=paste0("lead_images/NewScientist/research_output/NewScientist_page-", i,".jpg"), 
+                    quiet = TRUE)
+      print(paste0('Image #', i, ' downloaded successfully'))},
+      error = function(msg){
+        print(paste0('Cannot open URL ', i))
+      },
+      warning = function(msg){
+        print(paste0('Cannot open URL ', i))
+      })
+    
+  }
+}
+
+# save farming images
+for (i in 1:length(subject_output$lead_img)) {
+  if(subject_output$lead_img[i]=='[No lead image]'|is.na(subject_output$lead_img[i]==TRUE)){
+    print(paste0('No image to download for record #', i))
+  } else {
+    tryCatch({
+      download.file(subject_output$lead_img[i], 
+                    destfile=paste0("lead_images/NewScientist/subject_output/NewScientist_page-", i,".jpg"), 
+                    quiet = TRUE)
+      print(paste0('Image #', i, ' downloaded successfully'))},
+      error = function(msg){
+        print(paste0('Cannot open URL ', i))
+      },
+      warning = function(msg){
+        print(paste0('Cannot open URL ', i))
+      })
+    
   }
 }
